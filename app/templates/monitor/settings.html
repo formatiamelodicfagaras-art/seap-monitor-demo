@@ -1,0 +1,198 @@
+{% extends "base.html" %}
+
+{% block title %}SEAP Monitor — Setări Monitor{% endblock %}
+{% block page_title %}Setări Monitor{% endblock %}
+
+{% block content %}
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <!-- CPV Codes -->
+    <div class="bg-white rounded-xl shadow-sm border">
+        <div class="px-5 py-4 border-b">
+            <h3 class="font-semibold text-gray-800">Coduri CPV Monitorizate</h3>
+            <p class="text-xs text-gray-500 mt-1">Adaugă codurile CPV pentru care vrei să primești notificări</p>
+        </div>
+        <div class="p-5">
+            <form method="POST" action="/monitor/settings/cpv/add" class="flex gap-2 mb-3">
+                <input type="text" name="code" placeholder="ex: 22462000-6" required
+                       class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                <input type="text" name="description" placeholder="Descriere (opțional)"
+                       class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700">
+                    Adaugă
+                </button>
+            </form>
+            <form method="POST" action="/monitor/settings/cpv/upload" enctype="multipart/form-data" class="flex gap-2 mb-4 items-center">
+                <label class="flex-1 flex items-center gap-2 px-3 py-2 border border-dashed border-gray-300 rounded-lg text-sm cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition">
+                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+                    </svg>
+                    <span id="cpv-file-label" class="text-gray-500">Încarcă Excel (.xlsx) — coloane: Cod CPV, Denumire</span>
+                    <input type="file" name="file" accept=".xlsx,.xls" required class="hidden"
+                           onchange="document.getElementById('cpv-file-label').textContent = this.files[0].name">
+                </label>
+                <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700">
+                    Import
+                </button>
+            </form>
+            <div class="space-y-2">
+                {% for cpv in cpv_codes %}
+                <div class="flex items-center justify-between p-3 rounded-lg {% if cpv.is_active %}bg-green-50 border border-green-200{% else %}bg-gray-50 border border-gray-200{% endif %}">
+                    <div>
+                        <span class="font-mono text-sm font-medium">{{ cpv.code }}</span>
+                        {% if cpv.description %}
+                        <span class="text-sm text-gray-500 ml-2">{{ cpv.description }}</span>
+                        {% endif %}
+                    </div>
+                    <div class="flex gap-1">
+                        <form method="POST" action="/monitor/settings/cpv/toggle/{{ cpv.id }}" class="inline">
+                            <button type="submit" class="px-2 py-1 text-xs rounded {% if cpv.is_active %}bg-yellow-100 text-yellow-700{% else %}bg-green-100 text-green-700{% endif %}">
+                                {% if cpv.is_active %}Dezactivează{% else %}Activează{% endif %}
+                            </button>
+                        </form>
+                        <form method="POST" action="/monitor/settings/cpv/delete/{{ cpv.id }}" class="inline"
+                              onsubmit="return confirm('Sigur ștergi acest cod CPV?')">
+                            <button type="submit" class="px-2 py-1 text-xs rounded bg-red-100 text-red-700">Șterge</button>
+                        </form>
+                    </div>
+                </div>
+                {% else %}
+                <p class="text-sm text-gray-400 text-center py-4">Niciun cod CPV configurat</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Monitored Authorities -->
+    <div class="bg-white rounded-xl shadow-sm border">
+        <div class="px-5 py-4 border-b">
+            <h3 class="font-semibold text-gray-800">Autorități Contractante Monitorizate</h3>
+            <p class="text-xs text-gray-500 mt-1">Primește notificări pentru licitații de la aceste autorități</p>
+        </div>
+        <div class="p-5">
+            <form method="POST" action="/monitor/settings/authority/add" class="flex gap-2 mb-4">
+                <input type="number" name="seap_id" placeholder="ID SEAP" required
+                       class="w-28 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                <input type="text" name="name" placeholder="Nume autoritate" required
+                       class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700">
+                    Adaugă
+                </button>
+            </form>
+            <div class="space-y-2">
+                {% for auth in authorities %}
+                <div class="flex items-center justify-between p-3 rounded-lg bg-blue-50 border border-blue-200">
+                    <div>
+                        <span class="text-sm font-medium">{{ auth.name }}</span>
+                        <span class="text-xs text-gray-500 ml-2">ID: {{ auth.seap_id }}</span>
+                    </div>
+                    <form method="POST" action="/monitor/settings/authority/delete/{{ auth.id }}"
+                          onsubmit="return confirm('Sigur ștergi această autoritate?')">
+                        <button type="submit" class="px-2 py-1 text-xs rounded bg-red-100 text-red-700">Șterge</button>
+                    </form>
+                </div>
+                {% else %}
+                <p class="text-sm text-gray-400 text-center py-4">Nicio autoritate configurată</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Monitor Settings -->
+<div class="mt-6 bg-white rounded-xl shadow-sm border">
+    <div class="px-5 py-4 border-b">
+        <h3 class="font-semibold text-gray-800">Setări Generale Monitor</h3>
+    </div>
+    <form method="POST" action="/monitor/settings/monitor/save" class="p-5">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Frecvență scanare</label>
+                <select name="scan_interval_hours" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                    {% for h in [1, 3, 6, 12, 24] %}
+                    <option value="{{ h }}" {% if monitor and monitor.scan_interval_hours == h %}selected{% endif %}>
+                        La fiecare {{ h }} {% if h == 1 %}oră{% else %}ore{% endif %}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Email-uri notificare</label>
+                {% set emails = (monitor.notification_emails or []) if monitor else [] %}
+                {% for i in range(5) %}
+                <input type="email" name="notification_email_{{ i }}"
+                       value="{{ emails[i] if i < emails|length else '' }}"
+                       placeholder="email{{ i+1 }}@exemplu.com"
+                       class="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none {% if i > 0 %}mt-1{% endif %}">
+                {% endfor %}
+            </div>
+            <div class="flex items-end gap-4">
+                <label class="flex items-center gap-2">
+                    <input type="checkbox" name="is_active" value="true"
+                           {% if monitor and monitor.is_active %}checked{% endif %}
+                           class="rounded border-gray-300">
+                    <span class="text-sm">Monitor activ</span>
+                </label>
+                <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700">
+                    Salvează
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- Scan Logs -->
+<div class="mt-6 bg-white rounded-xl shadow-sm border">
+    <div class="px-5 py-4 border-b flex items-center justify-between">
+        <h3 class="font-semibold text-gray-800">Istoricul scanărilor</h3>
+        <div class="flex gap-2">
+            <form method="POST" action="/monitor/send-report" hx-post="/monitor/send-report" hx-swap="none">
+                <button type="submit" class="px-4 py-1.5 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700">
+                    Trimite raport email
+                </button>
+            </form>
+            <form method="POST" action="/monitor/scan-now" hx-post="/monitor/scan-now" hx-swap="none">
+                <button type="submit" class="px-4 py-1.5 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700">
+                    Scanează acum
+                </button>
+            </form>
+        </div>
+    </div>
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-4 py-2 text-left text-gray-600">Tip</th>
+                    <th class="px-4 py-2 text-left text-gray-600">Filtru</th>
+                    <th class="px-4 py-2 text-left text-gray-600">Găsite</th>
+                    <th class="px-4 py-2 text-left text-gray-600">Noi</th>
+                    <th class="px-4 py-2 text-left text-gray-600">Status</th>
+                    <th class="px-4 py-2 text-left text-gray-600">Data</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y">
+                {% for log in scan_logs %}
+                <tr>
+                    <td class="px-4 py-2 font-mono">{{ log.scan_type }}</td>
+                    <td class="px-4 py-2">{{ log.filter_value }}</td>
+                    <td class="px-4 py-2">{{ log.notices_found }}</td>
+                    <td class="px-4 py-2 font-medium {% if log.new_notices > 0 %}text-green-600{% endif %}">{{ log.new_notices }}</td>
+                    <td class="px-4 py-2">
+                        <span class="px-2 py-0.5 rounded text-xs
+                            {% if log.status == 'success' %}bg-green-100 text-green-700
+                            {% elif log.status == 'error' %}bg-red-100 text-red-700
+                            {% else %}bg-yellow-100 text-yellow-700{% endif %}">
+                            {{ log.status }}
+                        </span>
+                    </td>
+                    <td class="px-4 py-2 text-gray-500">{{ log.started_at.strftime('%d.%m.%Y %H:%M') if log.started_at else 'N/A' }}</td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" class="px-4 py-8 text-center text-gray-400">Nicio scanare efectuată</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

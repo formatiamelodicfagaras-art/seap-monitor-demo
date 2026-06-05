@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block title %}SEAP Monitor — Preview Document{% endblock %}
+{% block page_title %}Preview Document Generat{% endblock %}
+
+{% block content %}
+<div class="mb-4 flex items-center justify-between">
+    <a href="/generator/" class="text-sm text-blue-600 hover:underline">&larr; Înapoi la generator</a>
+    <div class="flex gap-2">
+        <a href="/generator/download/{{ bid.id }}" class="px-4 py-2 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700">
+            Descarcă {{ bid.output_format | upper }}
+        </a>
+    </div>
+</div>
+
+<!-- Bid info -->
+<div class="bg-white rounded-xl shadow-sm border p-4 mb-4">
+    <div class="flex flex-wrap gap-4 text-sm">
+        <span class="text-gray-500">Licitație: <strong>{{ bid.notice.title[:60] if bid.notice else 'N/A' }}</strong></span>
+        <span class="text-gray-500">Template: <strong>{{ bid.template.name if bid.template else 'N/A' }}</strong></span>
+        <span class="text-gray-500">Status:
+            <span class="px-2 py-0.5 rounded text-xs
+                {% if bid.status == 'draft' %}bg-yellow-100 text-yellow-700
+                {% elif bid.status == 'final' %}bg-green-100 text-green-700
+                {% else %}bg-gray-100 text-gray-700{% endif %}">
+                {{ bid.status }}
+            </span>
+        </span>
+        <span class="text-gray-500">Generat: <strong>{{ bid.generated_at.strftime('%d.%m.%Y %H:%M') if bid.generated_at else 'N/A' }}</strong></span>
+    </div>
+</div>
+
+<!-- Document content preview -->
+<div class="bg-white rounded-xl shadow-sm border">
+    <div class="px-5 py-4 border-b">
+        <h3 class="font-semibold text-gray-800">Conținut document</h3>
+    </div>
+    <div class="p-5">
+        <div class="prose max-w-none text-sm leading-relaxed">
+            {% if bid.generated_content %}
+                {% for line in bid.generated_content.split('\n') %}
+                    {% if line.strip().startswith('=== ') and line.strip().endswith(' ===') %}
+                        <h2 class="text-lg font-bold mt-6 mb-3 text-gray-800 border-b pb-2">{{ line.strip().strip('= ') }}</h2>
+                    {% elif line.strip().startswith('--- ') and line.strip().endswith(' ---') %}
+                        <h3 class="text-base font-semibold mt-4 mb-2 text-gray-700">{{ line.strip().strip('- ') }}</h3>
+                    {% elif '[DE COMPLETAT' in line %}
+                        <p class="my-1">{{ line[:line.index('[DE COMPLETAT')] }}<span class="bg-yellow-200 text-yellow-800 px-1 rounded">{{ line[line.index('[DE COMPLETAT'):] }}</span></p>
+                    {% elif line.strip() %}
+                        <p class="my-1">{{ line }}</p>
+                    {% else %}
+                        <br>
+                    {% endif %}
+                {% endfor %}
+            {% else %}
+                <p class="text-gray-400 text-center py-8">Niciun conținut disponibil</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

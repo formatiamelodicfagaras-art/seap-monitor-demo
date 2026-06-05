@@ -1,0 +1,280 @@
+{% extends "base.html" %}
+
+{% block title %}SEAP Monitor — Analiză {{ notice.title[:30] }}{% endblock %}
+{% block page_title %}Analiză Licitație{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+    <a href="/analyzer/" class="text-sm text-blue-600 hover:underline">&larr; Înapoi la analize</a>
+</div>
+
+<!-- Notice header -->
+<div class="bg-white rounded-xl shadow-sm border p-5 mb-4">
+    <h2 class="text-lg font-bold text-gray-800">{{ notice.title }}</h2>
+    <div class="flex flex-wrap gap-4 mt-2 text-sm text-gray-600">
+        <span>{{ notice.contracting_authority }}</span>
+        <span class="font-mono">{{ notice.cpv_code }}</span>
+        {% if notice.estimated_value %}
+        <span>{{ "{:,.0f}".format(notice.estimated_value) }} {{ notice.currency }}</span>
+        {% endif %}
+    </div>
+</div>
+
+{% if analysis and analysis.status == 'completed' and analysis.ai_analysis %}
+{% set a = analysis.ai_analysis %}
+
+<!-- Match Score -->
+<div class="bg-white rounded-xl shadow-sm border p-5 mb-4">
+    <div class="flex items-center gap-4">
+        <div class="text-center">
+            <div class="text-3xl font-bold
+                {% if analysis.match_score >= 7 %}text-green-600
+                {% elif analysis.match_score >= 4 %}text-yellow-600
+                {% else %}text-red-600{% endif %}">
+                {{ analysis.match_score }}/10
+            </div>
+            <div class="text-xs text-gray-500 mt-1">Scor Potrivire</div>
+        </div>
+        <div class="flex-1">
+            <div class="w-full bg-gray-200 rounded-full h-3">
+                <div class="h-3 rounded-full transition-all
+                    {% if analysis.match_score >= 7 %}bg-green-500
+                    {% elif analysis.match_score >= 4 %}bg-yellow-500
+                    {% else %}bg-red-500{% endif %}"
+                     style="width: {{ analysis.match_score * 10 }}%"></div>
+            </div>
+            {% if a.match_score and a.match_score.reasoning %}
+            <p class="text-sm text-gray-600 mt-2">{{ a.match_score.reasoning }}</p>
+            {% endif %}
+        </div>
+        <div>
+            <a href="/generator/?notice={{ notice.id }}" class="px-4 py-2 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700">
+                Generează ofertă
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <!-- Summary -->
+    {% if a.summary %}
+    <div class="bg-white rounded-xl shadow-sm border">
+        <div class="px-5 py-4 border-b">
+            <h3 class="font-semibold text-gray-800">Rezumat Executiv</h3>
+        </div>
+        <div class="p-5 space-y-2 text-sm">
+            <div><span class="text-gray-500">Descriere:</span> <span class="text-gray-800">{{ a.summary.description }}</span></div>
+            <div><span class="text-gray-500">Autoritate:</span> <span class="text-gray-800">{{ a.summary.authority }}</span></div>
+            <div><span class="text-gray-500">Valoare estimată:</span> <span class="font-medium">{{ a.summary.estimated_value }}</span></div>
+            <div><span class="text-gray-500">Termen limita:</span> <span class="font-medium text-red-600">{{ a.summary.deadline }}</span></div>
+            {% if a.summary.submission_method %}
+            <div><span class="text-gray-500">Depunere oferta:</span> <span class="text-gray-800">{{ a.summary.submission_method }}</span></div>
+            {% endif %}
+            {% if a.summary.offer_validity %}
+            <div><span class="text-gray-500">Valabilitate oferta:</span> <span class="text-gray-800">{{ a.summary.offer_validity }}</span></div>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Evaluation Criteria -->
+    {% if a.evaluation_criteria %}
+    <div class="bg-white rounded-xl shadow-sm border">
+        <div class="px-5 py-4 border-b">
+            <h3 class="font-semibold text-gray-800">Criterii de Evaluare</h3>
+        </div>
+        <div class="p-5 text-sm">
+            <div class="mb-2"><span class="text-gray-500">Tip:</span> <span class="font-medium">{{ a.evaluation_criteria.type }}</span></div>
+            {% if a.evaluation_criteria.factors %}
+            <div class="space-y-1">
+                {% for factor in a.evaluation_criteria.factors %}
+                <div class="flex justify-between p-2 bg-gray-50 rounded">
+                    <span>{{ factor.name }}</span>
+                    <span class="font-medium">{{ factor.weight }}</span>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+            {% if a.evaluation_criteria.scoring_formula %}
+            <div class="mt-2 text-xs text-gray-500">Formula: {{ a.evaluation_criteria.scoring_formula }}</div>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Technical Requirements -->
+    {% if a.technical_requirements %}
+    <div class="bg-white rounded-xl shadow-sm border">
+        <div class="px-5 py-4 border-b">
+            <h3 class="font-semibold text-gray-800">Cerințe Tehnice</h3>
+        </div>
+        <div class="p-5">
+            <div class="space-y-3">
+                {% for req in a.technical_requirements %}
+                <div class="p-3 bg-gray-50 rounded-lg">
+                    <div class="font-medium text-sm text-gray-800">{{ req.item }}</div>
+                    {% if req.specifications %}
+                    <div class="text-xs text-gray-600 mt-1">{{ req.specifications }}</div>
+                    {% endif %}
+                    <div class="flex gap-3 mt-1 text-xs text-gray-500">
+                        {% if req.quantity %}<span>Cantitate: {{ req.quantity }}</span>{% endif %}
+                        {% if req.delivery_term %}<span>Termen: {{ req.delivery_term }}</span>{% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Delivery, Reception, Payment Conditions -->
+    <div class="bg-white rounded-xl shadow-sm border lg:col-span-2">
+        <div class="px-5 py-4 border-b">
+            <h3 class="font-semibold text-gray-800">Conditii Contractuale</h3>
+        </div>
+        <div class="p-5 grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+            <!-- Livrare -->
+            {% if a.delivery_conditions %}
+            <div class="p-3 bg-blue-50 rounded-lg">
+                <h4 class="font-medium text-blue-800 mb-2">Livrare</h4>
+                {% if a.delivery_conditions.delivery_term %}
+                <div class="mb-1"><span class="text-gray-500">Termen:</span> <span class="font-medium">{{ a.delivery_conditions.delivery_term }}</span></div>
+                {% endif %}
+                {% if a.delivery_conditions.delivery_location %}
+                <div class="mb-1"><span class="text-gray-500">Loc:</span> {{ a.delivery_conditions.delivery_location }}</div>
+                {% endif %}
+                {% if a.delivery_conditions.transport_included %}
+                <div class="mb-1"><span class="text-gray-500">Transport:</span> {{ a.delivery_conditions.transport_included }}</div>
+                {% endif %}
+                {% if a.delivery_conditions.other_conditions %}
+                <div class="text-xs text-gray-600">{{ a.delivery_conditions.other_conditions }}</div>
+                {% endif %}
+            </div>
+            {% endif %}
+
+            <!-- Receptie -->
+            {% if a.reception_conditions %}
+            <div class="p-3 bg-green-50 rounded-lg">
+                <h4 class="font-medium text-green-800 mb-2">Receptie</h4>
+                {% if a.reception_conditions.method %}
+                <div class="mb-1"><span class="text-gray-500">Metoda:</span> {{ a.reception_conditions.method }}</div>
+                {% endif %}
+                {% if a.reception_conditions.inspection %}
+                <div class="mb-1"><span class="text-gray-500">Verificare:</span> {{ a.reception_conditions.inspection }}</div>
+                {% endif %}
+                {% if a.reception_conditions.remedy_term %}
+                <div class="mb-1"><span class="text-gray-500">Remediere:</span> <span class="font-medium">{{ a.reception_conditions.remedy_term }}</span></div>
+                {% endif %}
+                {% if a.reception_conditions.other %}
+                <div class="text-xs text-gray-600">{{ a.reception_conditions.other }}</div>
+                {% endif %}
+            </div>
+            {% endif %}
+
+            <!-- Plata -->
+            {% if a.payment_conditions %}
+            <div class="p-3 bg-yellow-50 rounded-lg">
+                <h4 class="font-medium text-yellow-800 mb-2">Plata</h4>
+                {% if a.payment_conditions.method %}
+                <div class="mb-1"><span class="text-gray-500">Modalitate:</span> {{ a.payment_conditions.method }}</div>
+                {% endif %}
+                {% if a.payment_conditions.term %}
+                <div class="mb-1"><span class="text-gray-500">Termen:</span> <span class="font-medium">{{ a.payment_conditions.term }}</span></div>
+                {% endif %}
+                {% if a.payment_conditions.documents_required %}
+                <div class="mb-1"><span class="text-gray-500">Documente:</span> {{ a.payment_conditions.documents_required }}</div>
+                {% endif %}
+                {% if a.payment_conditions.split_details %}
+                <div class="text-xs text-gray-600">{{ a.payment_conditions.split_details }}</div>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Qualification Requirements -->
+    {% if a.qualification_requirements %}
+    <div class="bg-white rounded-xl shadow-sm border">
+        <div class="px-5 py-4 border-b">
+            <h3 class="font-semibold text-gray-800">Cerințe de Calificare</h3>
+        </div>
+        <div class="p-5">
+            <div class="space-y-2">
+                {% for req in a.qualification_requirements %}
+                <label class="flex items-start gap-2 p-2 rounded hover:bg-gray-50 cursor-pointer">
+                    <input type="checkbox" class="mt-1 rounded border-gray-300">
+                    <div>
+                        <div class="text-sm font-medium text-gray-800">{{ req.requirement }}</div>
+                        {% if req.details %}
+                        <div class="text-xs text-gray-500 mt-0.5">{{ req.details }}</div>
+                        {% endif %}
+                    </div>
+                </label>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Required Documents -->
+    {% if a.required_documents %}
+    <div class="bg-white rounded-xl shadow-sm border lg:col-span-2">
+        <div class="px-5 py-4 border-b">
+            <h3 class="font-semibold text-gray-800">Documente Necesare pentru Ofertă</h3>
+        </div>
+        <div class="p-5">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+                {% for doc in a.required_documents %}
+                <label class="flex items-start gap-2 p-2 rounded hover:bg-gray-50 cursor-pointer">
+                    <input type="checkbox" class="mt-1 rounded border-gray-300">
+                    <div>
+                        <div class="text-sm font-medium text-gray-800">{{ doc.document }}</div>
+                        {% if doc.details %}
+                        <div class="text-xs text-gray-500 mt-0.5">{{ doc.details }}</div>
+                        {% endif %}
+                    </div>
+                </label>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Metadata -->
+<div class="mt-4 text-xs text-gray-400 flex gap-4">
+    <span>Model: {{ analysis.model_used }}</span>
+    <span>Tokeni: {{ "{:,}".format(analysis.tokens_used) if analysis.tokens_used else 'N/A' }}</span>
+    <span>Analizat: {{ analysis.analyzed_at.strftime('%d.%m.%Y %H:%M') if analysis.analyzed_at else 'N/A' }}</span>
+</div>
+
+{% elif analysis and analysis.status in ['extracting', 'analyzing', 'pending'] %}
+<div class="bg-white rounded-xl shadow-sm border p-12 text-center">
+    <div class="animate-spin w-10 h-10 border-4 border-purple-200 border-t-purple-600 rounded-full mx-auto mb-4"></div>
+    <p class="text-gray-600">Analiza este în curs...</p>
+    <p class="text-sm text-gray-400 mt-1">Status: {{ analysis.status }}</p>
+    <p class="text-xs text-gray-400 mt-2">Reîncarcă pagina pentru a verifica progresul</p>
+</div>
+
+{% elif analysis and analysis.status == 'error' %}
+<div class="bg-white rounded-xl shadow-sm border p-12 text-center">
+    <p class="text-red-600 font-medium">Eroare la analiză</p>
+    <p class="text-sm text-gray-500 mt-2">{{ analysis.error_message }}</p>
+    <form method="POST" action="/analyzer/analyze/{{ notice.id }}" class="mt-4">
+        <button type="submit" class="px-4 py-2 bg-purple-600 text-white rounded-lg text-sm hover:bg-purple-700">
+            Reîncearcă analiza
+        </button>
+    </form>
+</div>
+
+{% else %}
+<div class="bg-white rounded-xl shadow-sm border p-12 text-center">
+    <p class="text-gray-400">Licitația nu a fost analizată</p>
+    <form method="POST" action="/analyzer/analyze/{{ notice.id }}" class="mt-4">
+        <button type="submit" class="px-4 py-2 bg-purple-600 text-white rounded-lg text-sm hover:bg-purple-700">
+            Analizează cu AI
+        </button>
+    </form>
+</div>
+{% endif %}
+{% endblock %}

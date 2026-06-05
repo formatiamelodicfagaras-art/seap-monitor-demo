@@ -1,0 +1,41 @@
+# Web framework
+fastapi
+uvicorn[standard]
+python-multipart
+jinja2
+itsdangerous
+
+# Database
+sqlalchemy[asyncio]
+asyncpg
+alembic
+greenlet
+
+# Task queue
+celery[redis]
+redis
+
+# AI
+anthropic
+
+# Document processing
+pdfplumber
+python-docx
+reportlab
+
+# Email
+aiosmtplib
+
+# HTTP client
+aiohttp
+
+# Auth
+bcrypt
+passlib[bcrypt]
+
+# Logging
+loguru
+
+# Utils
+python-dotenv
+pydantic-settings

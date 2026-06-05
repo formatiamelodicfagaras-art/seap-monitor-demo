@@ -1,0 +1,178 @@
+{% extends "base.html" %}
+
+{% block title %}SEAP Monitor — Licitații{% endblock %}
+{% block page_title %}Licitații Monitorizate{% endblock %}
+
+{% block header_right %}
+<span class="text-gray-500">{{ total }} licitații găsite</span>
+{% endblock %}
+
+{% block content %}
+<!-- Filters -->
+<div class="bg-white rounded-xl shadow-sm border p-4 mb-4">
+    <form method="GET" action="/monitor/notices" class="flex flex-wrap gap-3 items-end">
+        <div>
+            <label class="block text-xs text-gray-500 mb-1">Căutare</label>
+            <input type="text" name="search" value="{{ search_filter or '' }}" placeholder="Titlu licitație..."
+                   class="px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+        </div>
+        <div>
+            <label class="block text-xs text-gray-500 mb-1">Tip anunț</label>
+            <select name="notice_type" class="px-3 py-1.5 border border-gray-300 rounded-lg text-sm">
+                <option value="">Toate</option>
+                <optgroup label="Anunțuri de participare">
+                    <option value="CN" {% if notice_type_filter == 'CN' %}selected{% endif %}>CN — Anunț de participare</option>
+                    <option value="SCN" {% if notice_type_filter == 'SCN' %}selected{% endif %}>SCN — Procedura simplificată</option>
+                    <option value="RFQ" {% if notice_type_filter == 'RFQ' %}selected{% endif %}>RFQ — Invitație de participare</option>
+                    <option value="PC" {% if notice_type_filter == 'PC' %}selected{% endif %}>PC — Concesionare</option>
+                    <option value="DC" {% if notice_type_filter == 'DC' %}selected{% endif %}>DC — Concurs soluții</option>
+                    <option value="LR" {% if notice_type_filter == 'LR' %}selected{% endif %}>LR — Licitație restrânsă</option>
+                </optgroup>
+                <optgroup label="Anunțuri de atribuire">
+                    <option value="CAN" {% if notice_type_filter == 'CAN' %}selected{% endif %}>CAN — Atribuire CN</option>
+                    <option value="SCAN" {% if notice_type_filter == 'SCAN' %}selected{% endif %}>SCAN — Atribuire SCN</option>
+                    <option value="RFQAN" {% if notice_type_filter == 'RFQAN' %}selected{% endif %}>RFQAN — Atribuire RFQ</option>
+                    <option value="PCAN" {% if notice_type_filter == 'PCAN' %}selected{% endif %}>PCAN — Atribuire PC</option>
+                    <option value="LRAN" {% if notice_type_filter == 'LRAN' %}selected{% endif %}>LRAN — Atribuire LR</option>
+                </optgroup>
+            </select>
+        </div>
+        <div>
+            <label class="block text-xs text-gray-500 mb-1">Status</label>
+            <select name="status" class="px-3 py-1.5 border border-gray-300 rounded-lg text-sm">
+                <option value="">Toate</option>
+                <option value="new" {% if status_filter == 'new' %}selected{% endif %}>Noi</option>
+                <option value="analyzed" {% if status_filter == 'analyzed' %}selected{% endif %}>Analizate</option>
+                <option value="bid_generated" {% if status_filter == 'bid_generated' %}selected{% endif %}>Ofertă generată</option>
+                <option value="archived" {% if status_filter == 'archived' %}selected{% endif %}>Arhivate</option>
+            </select>
+        </div>
+        <div>
+            <label class="block text-xs text-gray-500 mb-1">Cod CPV</label>
+            <input type="text" name="cpv" value="{{ cpv_filter or '' }}" placeholder="ex: 22462"
+                   class="px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none w-28">
+        </div>
+        <button type="submit" class="px-4 py-1.5 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700">
+            Filtrează
+        </button>
+        <a href="/monitor/notices" class="px-4 py-1.5 bg-gray-100 text-gray-600 rounded-lg text-sm hover:bg-gray-200">
+            Resetează
+        </a>
+    </form>
+</div>
+
+<!-- Notices table -->
+<div class="bg-white rounded-xl shadow-sm border overflow-hidden">
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-4 py-3 text-left text-gray-600 font-medium">Titlu</th>
+                    <th class="px-4 py-3 text-left text-gray-600 font-medium hidden md:table-cell">Autoritate</th>
+                    <th class="px-4 py-3 text-left text-gray-600 font-medium hidden lg:table-cell">CPV</th>
+                    <th class="px-4 py-3 text-left text-gray-600 font-medium">Valoare</th>
+                    <th class="px-4 py-3 text-left text-gray-600 font-medium hidden sm:table-cell">Termen</th>
+                    <th class="px-4 py-3 text-left text-gray-600 font-medium hidden lg:table-cell">Scor</th>
+                    <th class="px-4 py-3 text-left text-gray-600 font-medium hidden sm:table-cell">Status</th>
+                    <th class="px-4 py-3 text-left text-gray-600 font-medium">Acțiuni</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y">
+                {% for notice in notices %}
+                <tr class="hover:bg-gray-50">
+                    <td class="px-4 py-3">
+                        <a href="/monitor/notices/{{ notice.id }}" class="text-blue-600 hover:underline font-medium">
+                            {{ notice.title[:80] }}{% if notice.title|length > 80 %}...{% endif %}
+                        </a>
+                        <div class="text-xs text-gray-400 mt-0.5">{{ notice.notice_type }} — {{ notice.publication_date.strftime('%d.%m.%Y') if notice.publication_date else 'N/A' }}</div>
+                    </td>
+                    <td class="px-4 py-3 text-gray-600 max-w-[200px] truncate hidden md:table-cell">{{ notice.contracting_authority }}</td>
+                    <td class="px-4 py-3 font-mono text-xs hidden lg:table-cell">{{ notice.cpv_code[:15] }}</td>
+                    <td class="px-4 py-3">
+                        {% if notice.estimated_value %}
+                        <span class="font-medium">{{ "{:,.0f}".format(notice.estimated_value) }}</span>
+                        <span class="text-gray-400 text-xs">{{ notice.currency }}</span>
+                        {% else %}
+                        <span class="text-gray-400">N/A</span>
+                        {% endif %}
+                    </td>
+                    <td class="px-4 py-3 hidden sm:table-cell">
+                        {% if notice.deadline %}
+                        <span class="{% if notice.deadline < now %}text-red-500{% endif %}">
+                            {{ notice.deadline.strftime('%d.%m.%Y') }}
+                        </span>
+                        {% else %}
+                        <span class="text-gray-400">N/A</span>
+                        {% endif %}
+                    </td>
+                    <td class="px-4 py-3 hidden lg:table-cell">
+                        {% if notice.analysis and notice.analysis.match_score %}
+                        <span class="px-2 py-0.5 rounded text-xs font-medium
+                            {% if notice.analysis.match_score >= 7 %}bg-green-100 text-green-700
+                            {% elif notice.analysis.match_score >= 4 %}bg-yellow-100 text-yellow-700
+                            {% else %}bg-red-100 text-red-700{% endif %}">
+                            {{ notice.analysis.match_score }}/10
+                        </span>
+                        {% else %}
+                        <span class="text-gray-400 text-xs">—</span>
+                        {% endif %}
+                    </td>
+                    <td class="px-4 py-3 hidden sm:table-cell">
+                        <span class="px-2 py-0.5 rounded text-xs font-medium
+                            {% if notice.status == 'new' %}bg-blue-100 text-blue-700
+                            {% elif notice.status == 'analyzed' %}bg-purple-100 text-purple-700
+                            {% elif notice.status == 'bid_generated' %}bg-green-100 text-green-700
+                            {% elif notice.status == 'archived' %}bg-gray-100 text-gray-500
+                            {% else %}bg-gray-100 text-gray-700{% endif %}">
+                            {% if notice.status == 'new' %}Nouă
+                            {% elif notice.status == 'analyzed' %}Analizată
+                            {% elif notice.status == 'bid_generated' %}Ofertă
+                            {% elif notice.status == 'archived' %}Arhivată
+                            {% else %}{{ notice.status }}{% endif %}
+                        </span>
+                    </td>
+                    <td class="px-4 py-3">
+                        <div class="flex gap-1">
+                            <a href="/analyzer/analyze/{{ notice.id }}" hx-post="/analyzer/analyze/{{ notice.id }}" hx-swap="none"
+                               class="px-2 py-1 text-xs bg-purple-100 text-purple-700 rounded hover:bg-purple-200" title="Analizează AI">
+                                AI
+                            </a>
+                            <a href="/generator/?notice={{ notice.id }}"
+                               class="px-2 py-1 text-xs bg-green-100 text-green-700 rounded hover:bg-green-200" title="Generează ofertă">
+                                Gen
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="8" class="px-4 py-12 text-center text-gray-400">
+                        <p class="text-lg mb-2">Nicio licitație găsită</p>
+                        <p class="text-sm">Configurează codurile CPV în <a href="/monitor/settings" class="text-blue-500 hover:underline">Setări Monitor</a> și pornește scanarea.</p>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    {% if total_pages > 1 %}
+    <div class="px-4 py-3 border-t bg-gray-50 flex items-center justify-between">
+        <span class="text-sm text-gray-500">
+            Pagina {{ page }} din {{ total_pages }}
+        </span>
+        <div class="flex gap-1">
+            {% if page > 1 %}
+            <a href="?page={{ page - 1 }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if cpv_filter %}&cpv={{ cpv_filter }}{% endif %}{% if search_filter %}&search={{ search_filter }}{% endif %}{% if notice_type_filter %}&notice_type={{ notice_type_filter }}{% endif %}"
+               class="px-3 py-1 bg-white border rounded text-sm hover:bg-gray-50">Anterior</a>
+            {% endif %}
+            {% if page < total_pages %}
+            <a href="?page={{ page + 1 }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if cpv_filter %}&cpv={{ cpv_filter }}{% endif %}{% if search_filter %}&search={{ search_filter }}{% endif %}{% if notice_type_filter %}&notice_type={{ notice_type_filter }}{% endif %}"
+               class="px-3 py-1 bg-white border rounded text-sm hover:bg-gray-50">Următor</a>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

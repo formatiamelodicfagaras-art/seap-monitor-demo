@@ -1,0 +1,197 @@
+{% extends "base.html" %}
+
+{% block title %}SEAP Monitor — Generare Oferta{% endblock %}
+{% block page_title %}Generare Oferta{% endblock %}
+
+{% block content %}
+
+{% set cat_map = {
+    'propunere_financiara': ('Propunere financiara', 'bg-yellow-100 text-yellow-700'),
+    'propunere_tehnica': ('Propunere tehnica', 'bg-green-100 text-green-700'),
+    'formular_oferta': ('Formular de oferta', 'bg-blue-100 text-blue-700'),
+    'declaratie_conflict': ('Declaratie conflict interese', 'bg-red-100 text-red-700'),
+    'declaratie_mediu_social': ('Declaratie mediu social', 'bg-purple-100 text-purple-700'),
+    'declaratie_beneficiari': ('Declaratie beneficiari reali', 'bg-orange-100 text-orange-700'),
+    'declaratie_dnsh': ('Declaratie DNSH', 'bg-teal-100 text-teal-700'),
+    'other': ('Altele', 'bg-gray-100 text-gray-700'),
+} %}
+
+{% set categories_order = ['propunere_financiara', 'propunere_tehnica', 'formular_oferta', 'declaratie_conflict', 'declaratie_mediu_social', 'declaratie_beneficiari', 'declaratie_dnsh', 'other'] %}
+
+<!-- Generate form -->
+<div class="bg-white rounded-xl shadow-sm border p-5 mb-6">
+    <h3 class="font-semibold text-gray-800 mb-4">Genereaza documente oferta</h3>
+    <form method="POST" action="/generator/generate" class="space-y-4">
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Licitatie</label>
+            <select name="notice_id" id="notice-select" required class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                <option value="">Selecteaza licitatia...</option>
+                {% for notice in notices %}
+                <option value="{{ notice.id }}" data-auto="{{ auto_select.get(notice.id, []) | tojson }}">
+                    {{ notice.title[:80] }} ({{ notice.cpv_code[:30] }})
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Template-uri</label>
+            <div class="text-xs text-gray-400 mb-2">Template-urile recomandate sunt pre-selectate automat pe baza analizei AI</div>
+
+            {% set templates_by_cat = {} %}
+            {% for tmpl in bid_templates %}
+                {% set cat = tmpl.category if tmpl.category in cat_map else 'other' %}
+                {% if cat not in templates_by_cat %}
+                    {% set _ = templates_by_cat.update({cat: []}) %}
+                {% endif %}
+                {% set _ = templates_by_cat[cat].append(tmpl) %}
+            {% endfor %}
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+                {% for cat_key in categories_order %}
+                    {% if cat_key in templates_by_cat %}
+                    {% set cat_info = cat_map.get(cat_key, ('Altele', 'bg-gray-100 text-gray-700')) %}
+                    <div class="border rounded-lg p-3">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="px-1.5 py-0.5 rounded text-[10px] font-medium {{ cat_info[1] }}">{{ cat_info[0] }}</span>
+                            <span class="text-[10px] text-gray-400">{{ templates_by_cat[cat_key] | length }}</span>
+                        </div>
+                        <div class="space-y-1.5">
+                            {% for tmpl in templates_by_cat[cat_key] %}
+                            <label class="flex items-start gap-2 p-1.5 rounded hover:bg-gray-50 cursor-pointer group">
+                                <input type="checkbox" name="template_ids" value="{{ tmpl.id }}"
+                                       data-tmpl-id="{{ tmpl.id }}"
+                                       class="mt-0.5 rounded border-gray-300 tmpl-checkbox">
+                                <div class="min-w-0">
+                                    <div class="text-xs font-medium text-gray-800 group-hover:text-blue-600">{{ tmpl.name }}</div>
+                                    <div class="text-[10px] text-gray-400 truncate" title="{{ tmpl.original_filename }}">{{ tmpl.original_filename }}</div>
+                                    {% if tmpl.ai_field_analysis %}
+                                    <div class="text-[10px] text-green-600">AI: {{ tmpl.ai_field_analysis.get('variable_fields', []) | length }} campuri</div>
+                                    {% endif %}
+                                </div>
+                            </label>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+
+            {% if not bid_templates %}
+            <p class="text-sm text-gray-400 p-4 text-center">Niciun template disponibil. <a href="/generator/templates" class="text-blue-500 hover:underline">Incarca template-uri</a></p>
+            {% endif %}
+        </div>
+
+        <button type="submit" class="px-6 py-2 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700">
+            Genereaza documente
+        </button>
+    </form>
+</div>
+
+<!-- Generated bids -->
+<div class="bg-white rounded-xl shadow-sm border">
+    <div class="px-5 py-4 border-b">
+        <h3 class="font-semibold text-gray-800">Documente generate recent</h3>
+    </div>
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-4 py-2 text-left text-gray-600">Licitatie</th>
+                    <th class="px-4 py-2 text-left text-gray-600">Template</th>
+                    <th class="px-4 py-2 text-left text-gray-600">Format</th>
+                    <th class="px-4 py-2 text-left text-gray-600">Status</th>
+                    <th class="px-4 py-2 text-left text-gray-600">Data</th>
+                    <th class="px-4 py-2 text-left text-gray-600">Actiuni</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y">
+                {% set bids_by_notice = {} %}
+                {% for bid in generated_bids %}
+                    {% set nid = bid.notice_id %}
+                    {% if nid not in bids_by_notice %}
+                        {% set _ = bids_by_notice.update({nid: []}) %}
+                    {% endif %}
+                    {% set _ = bids_by_notice[nid].append(bid) %}
+                {% endfor %}
+
+                {% for nid, bids in bids_by_notice.items() %}
+                {% set first = bids[0] %}
+                {% set notice_title = first.notice.title[:60] if first.notice else 'N/A' %}
+                {% set folder_name = first.output_file_path.split('/')[-2] if first.output_file_path and '/' in first.output_file_path else '' %}
+                <tr class="bg-blue-50 cursor-pointer hover:bg-blue-100" onclick="document.querySelectorAll('.folder-{{ nid }}').forEach(r => r.classList.toggle('hidden'))">
+                    <td colspan="6" class="px-4 py-2">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <svg class="w-4 h-4 text-blue-500 transition-transform folder-arrow-{{ nid }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                                </svg>
+                                <svg class="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/>
+                                </svg>
+                                <span class="text-sm font-medium text-blue-800">{{ folder_name or notice_title }}</span>
+                                <span class="text-xs text-blue-500">({{ bids|length }} documente)</span>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+                {% for bid in bids %}
+                {% set filename = bid.output_file_path.split('/')[-1] if bid.output_file_path and '/' in bid.output_file_path else (bid.template.name if bid.template else 'N/A') %}
+                <tr class="folder-{{ nid }}">
+                    <td class="px-4 py-2 pl-10 max-w-[200px]">
+                        <span class="text-sm text-gray-700">{{ filename }}</span>
+                    </td>
+                    <td class="px-4 py-2 text-xs text-gray-500">{{ bid.template.name if bid.template else '' }}</td>
+                    <td class="px-4 py-2">
+                        <span class="px-1.5 py-0.5 rounded text-xs bg-blue-100 text-blue-700">{{ bid.output_format | upper }}</span>
+                    </td>
+                    <td class="px-4 py-2">
+                        <span class="px-2 py-0.5 rounded text-xs
+                            {% if bid.status == 'draft' %}bg-yellow-100 text-yellow-700
+                            {% elif bid.status == 'final' %}bg-green-100 text-green-700
+                            {% else %}bg-gray-100 text-gray-700{% endif %}">
+                            {{ bid.status }}
+                        </span>
+                    </td>
+                    <td class="px-4 py-2 text-gray-500 text-xs">{{ bid.generated_at.strftime('%d.%m.%Y %H:%M') if bid.generated_at else '' }}</td>
+                    <td class="px-4 py-2">
+                        <div class="flex gap-1">
+                            <a href="/generator/preview/{{ bid.id }}" class="px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200">Preview</a>
+                            <a href="/generator/download/{{ bid.id }}" class="px-2 py-1 text-xs bg-green-100 text-green-700 rounded hover:bg-green-200">Descarca</a>
+                            <form method="POST" action="/generator/delete/{{ bid.id }}" onsubmit="return confirm('Stergi acest document?')" class="inline">
+                                <button type="submit" class="px-2 py-1 text-xs bg-red-100 text-red-700 rounded hover:bg-red-200">Sterge</button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+                {% else %}
+                <tr>
+                    <td colspan="6" class="px-4 py-8 text-center text-gray-400">
+                        Niciun document generat
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+document.getElementById('notice-select').addEventListener('change', function() {
+    // Uncheck all
+    document.querySelectorAll('.tmpl-checkbox').forEach(cb => cb.checked = false);
+
+    const selected = this.options[this.selectedIndex];
+    if (!selected || !selected.value) return;
+
+    try {
+        const autoIds = JSON.parse(selected.dataset.auto || '[]');
+        autoIds.forEach(id => {
+            const cb = document.querySelector(`[data-tmpl-id="${id}"]`);
+            if (cb) cb.checked = true;
+        });
+    } catch(e) {}
+});
+</script>
+{% endblock %}

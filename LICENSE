@@ -1,0 +1,93 @@
+Copyright (c) 2026 formatiamelodicfagaras-art. All Rights Reserved.
+
+This repository and its contents (the "Software") are the proprietary work of
+the copyright holder. By accessing this repository, you acknowledge and agree
+to the following terms.
+
+1. PERMITTED USE
+
+   You may view the Software's source code through the GitHub web interface
+   for the sole purposes of:
+
+   - Evaluating the technical capabilities of the author
+   - Personal study and learning
+
+2. PROHIBITED USE
+
+   Without prior written permission from the copyright holder, you may NOT:
+
+   - Clone, download, copy, fork, mirror, or otherwise store the Software
+     outside of the official GitHub repository
+   - Modify the Software or create derivative works based on it, including
+     but not limited to: refactoring, renaming, restructuring, translating
+     to another programming language, porting to another platform,
+     extracting individual modules, files, functions, classes, or any
+     other partial component, or combining any portion of the Software
+     with other code
+   - Distribute, redistribute, sublicense, sell, or offer for sale the
+     Software in whole or in part, including any modified or derivative
+     version regardless of the extent of the modifications
+   - Re-license the Software or any derivative work under any other
+     license, whether open source, proprietary, or otherwise
+   - Use the Software, in whole or in part, in any commercial product,
+     service, internal business operation, or revenue-generating activity
+   - Use the Software to train, fine-tune, prompt, or otherwise feed
+     machine learning models or AI systems, whether for research or
+     commercial purposes
+   - Publish, share, or describe in detail the implementation, algorithms,
+     architecture, or business logic of the Software with the intent or
+     effect of enabling reimplementation by others
+   - Remove or alter any copyright notice, attribution, or this license
+
+3. DERIVATIVE WORKS AND SUBSTANTIAL SIMILARITY
+
+   The prohibitions in Section 2 apply regardless of the extent of
+   modification. A work that:
+
+   - Reproduces non-trivial portions of the Software's source code, or
+   - Is substantially similar in structure, sequence, organization, naming,
+     or expression to the Software, or
+   - Was created with reference to the Software as a starting point or
+     template
+
+   is a derivative work covered by this license, even if substantially
+   rewritten or translated to another language. Independent, clean-room
+   implementations of the same abstract functionality, created without
+   reference to the Software's source code, are not derivative works.
+
+4. NO LICENSE GRANTED
+
+   No rights or licenses, express or implied, are granted to you by this
+   document except those explicitly stated in Section 1. All other rights
+   are expressly reserved by the copyright holder. Nothing in this
+   document constitutes a sale, transfer, or assignment of any
+   intellectual property rights.
+
+5. ENFORCEMENT
+
+   Unauthorized use of the Software may constitute copyright infringement
+   and will be prosecuted to the fullest extent of applicable law,
+   including the laws of Romania, the European Union, and any other
+   applicable jurisdiction. The copyright holder reserves the right to:
+
+   - Issue DMCA takedown notices to any platform hosting unauthorized
+     copies or derivative works
+   - Seek injunctive relief to stop ongoing infringement
+   - Pursue monetary damages, including statutory damages and disgorgement
+     of profits
+   - Recover legal fees and costs of enforcement
+
+6. NO WARRANTY
+
+   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+   OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+   FITNESS FOR A PARTICULAR PURPOSE, AND NONINFRINGEMENT. IN NO EVENT SHALL
+   THE COPYRIGHT HOLDER BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER LIABILITY,
+   WHETHER IN AN ACTION OF CONTRACT, TORT, OR OTHERWISE, ARISING FROM, OUT OF,
+   OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+   SOFTWARE.
+
+7. LICENSING INQUIRIES
+
+   For commercial licensing, custom development, or any other use not
+   covered by Section 1, contact: formatia.melodic.fagaras@gmail.com

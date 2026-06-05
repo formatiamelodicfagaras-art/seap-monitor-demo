@@ -1,0 +1,203 @@
+{% extends "base.html" %}
+
+{% block title %}SEAP Monitor — {{ notice.title[:50] }}{% endblock %}
+{% block page_title %}Detalii Licitație{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+    <a href="javascript:void(0)" onclick="window.history.back()" class="text-sm text-blue-600 hover:underline">&larr; Înapoi la listă</a>
+</div>
+
+<!-- Header -->
+<div class="bg-white rounded-xl shadow-sm border p-5 mb-4">
+    <div class="flex flex-col lg:flex-row items-start justify-between gap-3">
+        <div class="flex-1 min-w-0">
+            <h2 class="text-lg lg:text-xl font-bold text-gray-800 break-words">{{ notice.title }}</h2>
+            <div class="flex flex-wrap gap-4 mt-3 text-sm text-gray-600">
+                <span>Autoritate: <strong>{{ notice.contracting_authority }}</strong></span>
+                <span>CPV: <strong class="font-mono">{{ notice.cpv_code }}</strong></span>
+                <span>Tip: <strong>{{ notice.notice_type }}</strong></span>
+                {% if notice.raw_data and notice.raw_data.noticeNo %}
+                <span>Nr: <strong class="font-mono text-purple-600">{{ notice.raw_data.noticeNo }}</strong></span>
+                {% endif %}
+            </div>
+            <div class="flex flex-wrap gap-4 mt-2 text-sm text-gray-600">
+                {% if notice.estimated_value %}
+                <span>Valoare: <strong>{{ "{:,.0f}".format(notice.estimated_value) }} {{ notice.currency }}</strong></span>
+                {% endif %}
+                {% if notice.publication_date %}
+                <span>Publicată: <strong>{{ notice.publication_date.strftime('%d.%m.%Y') }}</strong></span>
+                {% endif %}
+                {% if notice.deadline %}
+                <span>Termen: <strong class="text-red-600">{{ notice.deadline.strftime('%d.%m.%Y %H:%M') }}</strong></span>
+                {% endif %}
+            </div>
+        </div>
+        <div class="flex flex-col gap-2 ml-4">
+            <span class="px-3 py-1 rounded text-sm font-medium text-center
+                {% if notice.status == 'new' %}bg-blue-100 text-blue-700
+                {% elif notice.status == 'analyzed' %}bg-purple-100 text-purple-700
+                {% elif notice.status == 'bid_generated' %}bg-green-100 text-green-700
+                {% else %}bg-gray-100 text-gray-700{% endif %}">
+                {% if notice.status == 'new' %}Nouă
+                {% elif notice.status == 'analyzed' %}Analizată
+                {% elif notice.status == 'bid_generated' %}Ofertă generată
+                {% else %}{{ notice.status }}{% endif %}
+            </span>
+            {% if notice.seap_url %}
+            <a href="{{ notice.seap_url }}" target="_blank" class="px-3 py-1 bg-gray-100 text-gray-600 rounded text-sm text-center hover:bg-gray-200">
+                Deschide în SEAP &nearr;
+            </a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Actions -->
+<div class="flex flex-wrap gap-2 mb-4">
+    <form method="POST" action="/analyzer/analyze/{{ notice.id }}">
+        <button type="submit" class="px-4 py-2 bg-purple-600 text-white rounded-lg text-sm hover:bg-purple-700">
+            Analizează cu AI
+        </button>
+    </form>
+    <form method="POST" action="/monitor/notices/{{ notice.id }}/archive"
+          onsubmit="return confirm('Arhivezi această licitație?')">
+        <button type="submit" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg text-sm hover:bg-gray-300">
+            Arhivează
+        </button>
+    </form>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <!-- Documents -->
+    <div class="bg-white rounded-xl shadow-sm border">
+        <div class="px-5 py-4 border-b">
+            <h3 class="font-semibold text-gray-800">Documente Atașate</h3>
+        </div>
+        <div class="divide-y">
+            {% if notice.documents %}
+                {% for doc in notice.documents %}
+                <div class="px-5 py-3 flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <span class="px-2 py-0.5 rounded text-xs font-mono
+                            {% if doc.file_type == 'pdf' %}bg-red-100 text-red-700
+                            {% elif doc.file_type == 'docx' %}bg-blue-100 text-blue-700
+                            {% elif doc.file_type == 'zip' %}bg-yellow-100 text-yellow-700
+                            {% else %}bg-gray-100 text-gray-700{% endif %}">
+                            {{ doc.file_type | upper }}
+                        </span>
+                        <div>
+                            <p class="text-sm font-medium text-gray-800">{{ doc.filename }}</p>
+                            {% if doc.file_size %}
+                            <p class="text-xs text-gray-400">{{ "%.1f"|format(doc.file_size / 1024 / 1024) }} MB</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="text-xs text-gray-500">
+                        {% if doc.downloaded_at %}
+                        Descărcat {{ doc.downloaded_at.strftime('%d.%m.%Y %H:%M') }}
+                        {% else %}
+                        <span class="text-yellow-600">Nedescărcat</span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="px-5 py-8 text-center text-gray-400">
+                    <p>Niciun document atasat</p>
+                    <p class="text-xs mt-1">Incarca documente manual de pe SEAP</p>
+                </div>
+            {% endif %}
+        </div>
+        <!-- Upload documents -->
+        <div class="px-5 py-3 border-t bg-gray-50">
+            <form method="POST" action="/monitor/notices/{{ notice.id }}/upload-docs" enctype="multipart/form-data" class="flex items-center gap-2">
+                <label class="flex-1 flex items-center gap-2 px-3 py-2 border border-dashed border-gray-300 rounded-lg text-sm cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition">
+                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+                    </svg>
+                    <span id="upload-file-label" class="text-gray-500">Incarca documente (PDF, DOCX, ZIP)</span>
+                    <input type="file" name="files" accept=".pdf,.docx,.doc,.zip,.xlsx,.xls" multiple required class="hidden"
+                           onchange="document.getElementById('upload-file-label').textContent = this.files.length + ' fisier(e) selectate'">
+                </label>
+                <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 whitespace-nowrap">
+                    Incarca
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- AI Analysis summary -->
+    <div class="bg-white rounded-xl shadow-sm border">
+        <div class="px-5 py-4 border-b">
+            <h3 class="font-semibold text-gray-800">Analiză AI</h3>
+        </div>
+        <div class="p-5">
+            {% if notice.analysis and notice.analysis.status == 'completed' %}
+                {% set a = notice.analysis.ai_analysis %}
+                <!-- Match Score -->
+                <div class="mb-4">
+                    <div class="flex items-center justify-between mb-1">
+                        <span class="text-sm font-medium text-gray-700">Potrivire</span>
+                        <span class="text-lg font-bold
+                            {% if notice.analysis.match_score >= 7 %}text-green-600
+                            {% elif notice.analysis.match_score >= 4 %}text-yellow-600
+                            {% else %}text-red-600{% endif %}">
+                            {{ notice.analysis.match_score }}/10
+                        </span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-2">
+                        <div class="h-2 rounded-full
+                            {% if notice.analysis.match_score >= 7 %}bg-green-500
+                            {% elif notice.analysis.match_score >= 4 %}bg-yellow-500
+                            {% else %}bg-red-500{% endif %}"
+                             style="width: {{ notice.analysis.match_score * 10 }}%"></div>
+                    </div>
+                    {% if a.match_score and a.match_score.reasoning %}
+                    <p class="text-xs text-gray-500 mt-1">{{ a.match_score.reasoning }}</p>
+                    {% endif %}
+                </div>
+
+                <!-- Summary -->
+                {% if a.summary %}
+                <div class="mb-3">
+                    <h4 class="text-sm font-medium text-gray-700 mb-1">Rezumat</h4>
+                    <p class="text-sm text-gray-600">{{ a.summary.description }}</p>
+                </div>
+                {% endif %}
+
+                <a href="/analyzer/view/{{ notice.id }}" class="text-sm text-blue-600 hover:underline">
+                    Vezi analiza completă &rarr;
+                </a>
+
+            {% elif notice.analysis and notice.analysis.status in ['extracting', 'analyzing', 'pending'] %}
+                <div class="text-center py-8">
+                    <div class="animate-spin w-8 h-8 border-4 border-purple-200 border-t-purple-600 rounded-full mx-auto mb-3"></div>
+                    <p class="text-sm text-gray-500">Analiza este în curs...</p>
+                    <p class="text-xs text-gray-400 mt-1">Status: {{ notice.analysis.status }}</p>
+                </div>
+
+            {% elif notice.analysis and notice.analysis.status == 'error' %}
+                <div class="text-center py-8 text-red-600">
+                    <p class="text-sm">Eroare la analiză</p>
+                    <p class="text-xs mt-1">{{ notice.analysis.error_message }}</p>
+                </div>
+
+            {% else %}
+                <div class="text-center py-8 text-gray-400">
+                    <p>Licitația nu a fost analizată</p>
+                    <p class="text-xs mt-1">Apasă "Analizează cu AI" pentru a începe</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Raw data (hidden, triple-click to reveal) -->
+<details class="mt-6 opacity-0 hover:opacity-100 transition-opacity duration-300">
+    <summary class="px-5 py-2 cursor-pointer text-xs text-gray-300">debug</summary>
+    <div class="px-5 pb-5 bg-white rounded-xl shadow-sm border">
+        <pre class="bg-gray-900 text-green-400 p-4 rounded-lg overflow-x-auto text-xs max-h-96">{{ notice.raw_data | tojson(indent=2) if notice.raw_data else 'N/A' }}</pre>
+    </div>
+</details>
+{% endblock %}

@@ -1,0 +1,51 @@
+version: "3.8"
+
+services:
+  app:
+    build: .
+    ports:
+      - "8050:8000"
+    env_file: .env
+    volumes:
+      - ./storage:/app/storage
+    depends_on:
+      - db
+      - redis
+    restart: unless-stopped
+
+  celery-worker:
+    build: .
+    command: celery -A app.celery_app worker -l info -c 2
+    env_file: .env
+    volumes:
+      - ./storage:/app/storage
+    depends_on:
+      - db
+      - redis
+    restart: unless-stopped
+
+  celery-beat:
+    build: .
+    command: celery -A app.celery_app beat -l info -s /tmp/celerybeat-schedule
+    env_file: .env
+    depends_on:
+      - db
+      - redis
+    restart: unless-stopped
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${DB_NAME:-seap_monitor}
+      POSTGRES_USER: ${DB_USER:-seap_user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-change_me_strong_password}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+
+volumes:
+  pgdata:

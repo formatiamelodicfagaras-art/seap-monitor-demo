@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+
+{% block title %}SEAP Monitor — Dashboard{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block content %}
+<!-- Stats cards -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+    <div class="bg-white rounded-xl shadow-sm border p-5">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-sm text-gray-500">Licitații noi azi</p>
+                <p class="text-2xl font-bold text-gray-800 mt-1">{{ stats.today_count }}</p>
+            </div>
+            <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+                <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-xl shadow-sm border p-5">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-sm text-gray-500">Săptămâna aceasta</p>
+                <p class="text-2xl font-bold text-gray-800 mt-1">{{ stats.week_count }}</p>
+            </div>
+            <div class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
+                <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-xl shadow-sm border p-5">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-sm text-gray-500">Analizate AI</p>
+                <p class="text-2xl font-bold text-gray-800 mt-1">{{ stats.analyzed_count }}</p>
+            </div>
+            <div class="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center">
+                <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-xl shadow-sm border p-5">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-sm text-gray-500">Oferte generate</p>
+                <p class="text-2xl font-bold text-gray-800 mt-1">{{ stats.bids_count }}</p>
+            </div>
+            <div class="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center">
+                <svg class="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <!-- Recent notices -->
+    <div class="bg-white rounded-xl shadow-sm border">
+        <div class="px-5 py-4 border-b flex items-center justify-between">
+            <h3 class="font-semibold text-gray-800">Ultimele licitații noi</h3>
+            <a href="/monitor/notices" class="text-sm text-blue-600 hover:underline">Vezi toate</a>
+        </div>
+        <div class="divide-y">
+            {% if recent_notices %}
+                {% for notice in recent_notices %}
+                <a href="/monitor/notices/{{ notice.id }}" class="block px-5 py-3 hover:bg-gray-50">
+                    <div class="flex items-start justify-between">
+                        <div class="flex-1 min-w-0">
+                            <p class="text-sm font-medium text-gray-800 truncate">{{ notice.title }}</p>
+                            <p class="text-xs text-gray-500 mt-1">{{ notice.contracting_authority }} — {{ notice.cpv_code }}</p>
+                        </div>
+                        {% if notice.analysis and notice.analysis.match_score %}
+                        <span class="ml-2 px-2 py-1 rounded text-xs font-medium
+                            {% if notice.analysis.match_score >= 7 %}bg-green-100 text-green-700
+                            {% elif notice.analysis.match_score >= 4 %}bg-yellow-100 text-yellow-700
+                            {% else %}bg-red-100 text-red-700{% endif %}">
+                            {{ notice.analysis.match_score }}/10
+                        </span>
+                        {% endif %}
+                    </div>
+                    <div class="flex items-center gap-3 mt-1">
+                        {% if notice.estimated_value %}
+                        <span class="text-xs text-gray-500">{{ "{:,.0f}".format(notice.estimated_value) }} {{ notice.currency }}</span>
+                        {% endif %}
+                        {% if notice.deadline %}
+                        <span class="text-xs text-gray-500">Termen: {{ notice.deadline.strftime('%d.%m.%Y') }}</span>
+                        {% endif %}
+                    </div>
+                </a>
+                {% endfor %}
+            {% else %}
+                <div class="px-5 py-8 text-center text-gray-400">
+                    <p>Nicio licitație găsită încă</p>
+                    <p class="text-xs mt-1">Configurează codurile CPV în <a href="/monitor/settings" class="text-blue-500 hover:underline">Setări Monitor</a></p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Upcoming deadlines -->
+    <div class="bg-white rounded-xl shadow-sm border">
+        <div class="px-5 py-4 border-b flex items-center justify-between">
+            <h3 class="font-semibold text-gray-800">Termene apropiate (7 zile)</h3>
+        </div>
+        <div class="divide-y">
+            {% if upcoming_deadlines %}
+                {% for notice in upcoming_deadlines %}
+                <a href="/monitor/notices/{{ notice.id }}" class="block px-5 py-3 hover:bg-gray-50">
+                    <div class="flex items-start justify-between">
+                        <div class="flex-1 min-w-0">
+                            <p class="text-sm font-medium text-gray-800 truncate">{{ notice.title }}</p>
+                            <p class="text-xs text-gray-500 mt-1">{{ notice.contracting_authority }}</p>
+                        </div>
+                        <span class="ml-2 px-2 py-1 rounded text-xs font-medium bg-red-100 text-red-700">
+                            {{ notice.deadline.strftime('%d.%m.%Y %H:%M') }}
+                        </span>
+                    </div>
+                </a>
+                {% endfor %}
+            {% else %}
+                <div class="px-5 py-8 text-center text-gray-400">
+                    <p>Niciun termen în următoarele 7 zile</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Scan status -->
+<div class="mt-6 bg-white rounded-xl shadow-sm border p-5">
+    <h3 class="font-semibold text-gray-800 mb-3">Status scanare</h3>
+    <div class="flex items-center gap-6 text-sm">
+        <div class="flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full {% if monitor_active %}bg-green-500{% else %}bg-gray-400{% endif %}"></span>
+            <span class="text-gray-600">Monitor: {% if monitor_active %}Activ{% else %}Inactiv{% endif %}</span>
+        </div>
+        {% if last_scan %}
+        <div class="text-gray-500">
+            Ultima scanare: {{ last_scan.finished_at.strftime('%d.%m.%Y %H:%M') if last_scan.finished_at else 'În curs...' }}
+            — {{ last_scan.new_notices }} noi din {{ last_scan.notices_found }} găsite
+        </div>
+        {% endif %}
+        <div class="ml-auto">
+            <a href="/monitor/scan-now" hx-post="/monitor/scan-now" hx-swap="none"
+               class="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg transition-colors">
+                Scanează acum
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

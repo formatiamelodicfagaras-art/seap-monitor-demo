@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}SEAP Monitor{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+    <link rel="stylesheet" href="/static/css/custom.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: { 50: '#eff6ff', 100: '#dbeafe', 200: '#bfdbfe', 300: '#93c5fd', 400: '#60a5fa', 500: '#3b82f6', 600: '#2563eb', 700: '#1d4ed8', 800: '#1e40af', 900: '#1e3a8a' },
+                        accent: { 500: '#8b5cf6', 600: '#7c3aed' },
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    {% block body %}
+    <!-- Mobile hamburger button -->
+    <button id="sidebar-toggle" class="lg:hidden fixed top-3 left-3 z-50 p-2 bg-gray-900 text-white rounded-lg shadow-lg" onclick="document.getElementById('sidebar').classList.toggle('-translate-x-full')">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+    </button>
+    <!-- Sidebar overlay (mobile) -->
+    <div id="sidebar-overlay" class="lg:hidden fixed inset-0 bg-black bg-opacity-50 z-30 hidden" onclick="document.getElementById('sidebar').classList.add('-translate-x-full'); this.classList.add('hidden')"></div>
+
+    <!-- Sidebar + Content layout -->
+    <div class="flex min-h-screen">
+        <!-- Sidebar -->
+        <aside id="sidebar" class="w-64 bg-gray-900 text-white flex flex-col fixed h-full z-40 transition-transform duration-300 -translate-x-full lg:translate-x-0">
+            <div class="p-4 border-b border-gray-700">
+                <h1 class="text-lg font-bold">SEAP Monitor</h1>
+                <p class="text-xs text-gray-400 mt-1">Monitorizare & Ofertare</p>
+            </div>
+            <nav class="flex-1 p-4 space-y-1">
+                <a href="/" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-800 {% if active_page == 'dashboard' %}bg-gray-800 text-white{% else %}text-gray-300{% endif %}">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+                    Dashboard
+                </a>
+
+                <p class="text-xs uppercase text-gray-500 mt-4 mb-2 px-3">Monitorizare</p>
+                <a href="/monitor/notices" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-800 {% if active_page == 'notices' %}bg-gray-800 text-white{% else %}text-gray-300{% endif %}">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                    Licitații
+                </a>
+                <a href="/monitor/settings" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-800 {% if active_page == 'monitor_settings' %}bg-gray-800 text-white{% else %}text-gray-300{% endif %}">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                    Setări Monitor
+                </a>
+
+                <p class="text-xs uppercase text-gray-500 mt-4 mb-2 px-3">Analiză</p>
+                <a href="/analyzer/" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-800 {% if active_page == 'analyzer' %}bg-gray-800 text-white{% else %}text-gray-300{% endif %}">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
+                    Analiză AI
+                </a>
+
+                <p class="text-xs uppercase text-gray-500 mt-4 mb-2 px-3">Ofertare</p>
+                <a href="/generator/templates" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-800 {% if active_page == 'gen_templates' %}bg-gray-800 text-white{% else %}text-gray-300{% endif %}">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"/></svg>
+                    Template-uri
+                </a>
+                <a href="/generator/" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-800 {% if active_page == 'generator' %}bg-gray-800 text-white{% else %}text-gray-300{% endif %}">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                    Generare Ofertă
+                </a>
+
+                <p class="text-xs uppercase text-gray-500 mt-4 mb-2 px-3">Profil</p>
+                <a href="/generator/company" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-800 {% if active_page == 'company' %}bg-gray-800 text-white{% else %}text-gray-300{% endif %}">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                    Date Firmă
+                </a>
+            </nav>
+            <div class="p-4 border-t border-gray-700">
+                <a href="/logout" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-800 text-gray-300">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+                    Deconectare
+                </a>
+            </div>
+        </aside>
+
+        <!-- Main content -->
+        <main class="flex-1 ml-0 lg:ml-64">
+            <!-- Top bar -->
+            <header class="bg-white shadow-sm border-b px-4 lg:px-6 py-3 flex items-center justify-between">
+                <h2 class="text-lg font-semibold text-gray-800 ml-10 lg:ml-0">{% block page_title %}Dashboard{% endblock %}</h2>
+                <div class="text-sm text-gray-500">
+                    {% block header_right %}{% endblock %}
+                </div>
+            </header>
+
+            <!-- Page content -->
+            <div class="p-3 lg:p-6">
+                {% if flash_message %}
+                <div class="mb-4 p-4 rounded-lg {% if flash_type == 'error' %}bg-red-50 text-red-700 border border-red-200{% elif flash_type == 'success' %}bg-green-50 text-green-700 border border-green-200{% else %}bg-blue-50 text-blue-700 border border-blue-200{% endif %}">
+                    {{ flash_message }}
+                </div>
+                {% endif %}
+
+                {% block content %}{% endblock %}
+            </div>
+        </main>
+    </div>
+    {% endblock %}
+
+    <script src="/static/js/app.js"></script>
+    <script>
+        // Mobile sidebar toggle
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('sidebar-overlay');
+        const toggle = document.getElementById('sidebar-toggle');
+        if (sidebar && overlay && toggle) {
+            toggle.addEventListener('click', () => {
+                const isHidden = sidebar.classList.contains('-translate-x-full');
+                if (isHidden) {
+                    sidebar.classList.remove('-translate-x-full');
+                    overlay.classList.remove('hidden');
+                } else {
+                    sidebar.classList.add('-translate-x-full');
+                    overlay.classList.add('hidden');
+                }
+            });
+            // Close sidebar when clicking a nav link on mobile
+            sidebar.querySelectorAll('nav a').forEach(link => {
+                link.addEventListener('click', () => {
+                    if (window.innerWidth < 1024) {
+                        sidebar.classList.add('-translate-x-full');
+                        overlay.classList.add('hidden');
+                    }
+                });
+            });
+        }
+    </script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>
