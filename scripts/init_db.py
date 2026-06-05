@@ -37,11 +37,11 @@ async def init():
         existing_company = await db.scalar(select(CompanyProfile).limit(1))
         if not existing_company:
             db.add(CompanyProfile(data={
-                "name": "Style Advertising SRL",
-                "brand": "Veylo Dev",
+                "name": "",
+                "brand": "",
                 "cui": "",
                 "reg_com": "",
-                "address": "Făgăraș, jud. Brașov",
+                "address": "",
                 "bank_name": "",
                 "iban": "",
                 "legal_rep": "",

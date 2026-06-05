@@ -19,6 +19,10 @@
 
 AI-assisted bid-management platform for Romanian public procurement (SEAP / e-licitatie.ro). A three-stage pipeline that scans the public SEAP API for relevant tenders, extracts and analyzes the attached documentation with Claude, then drafts bid documents from reusable templates and a company profile.
 
+<p align="center">
+  <img src="docs/screenshots/02-dashboard.png" alt="Dashboard" width="820"/>
+</p>
+
 ## Why this exists
 
 Companies bidding on Romanian public procurement spend hours every day refreshing the SEAP portal, reading multi-hundred-page PDF attachments, and copy-pasting the same boilerplate into every administrative form. The decision of whether a tender is even worth pursuing is buried inside a 70-page caiet de sarcini that often arrives only in scanned form.
@@ -110,6 +114,26 @@ uvicorn app.main:app --reload --port 8050
 ```
 
 Redis is only needed if you want Celery workers — the in-process scheduler runs without it. Anthropic API key is only needed for the Analyzer + Generator modules; Monitor works standalone.
+
+## Screenshots
+
+| Dashboard | Tender list |
+| --- | --- |
+| ![Dashboard](docs/screenshots/02-dashboard.png) | ![Notices](docs/screenshots/03-notices.png) |
+
+| AI analysis (eligibility, requirements, scoring) | Notice detail |
+| --- | --- |
+| ![Analysis](docs/screenshots/06-analysis.png) | ![Notice](docs/screenshots/04-notice-detail.png) |
+
+| Monitor settings (CPV codes + authorities) | Bid templates |
+| --- | --- |
+| ![Settings](docs/screenshots/05-monitor-settings.png) | ![Templates](docs/screenshots/07-templates.png) |
+
+| Company profile | Login |
+| --- | --- |
+| ![Company](docs/screenshots/08-company.png) | ![Login](docs/screenshots/01-login.png) |
+
+> Screenshots use synthetic demo data — fictitious authorities ("Ministerul Demonstrației Publice", "Spitalul Județean Demo") and a placeholder company profile. Real users replace these via the UI on first run.
 
 ## Project layout
 

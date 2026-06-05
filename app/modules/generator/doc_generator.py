@@ -109,10 +109,10 @@ def save_as_docx(content: str, output_path: str, signature_path: str = "", stamp
 
     doc = Document()
 
-    # Set document properties
-    doc.core_properties.author = "Style Advertising"
-    doc.core_properties.company = "Style Advertising SRL"
-    doc.core_properties.last_modified_by = "Style Advertising"
+    # Set generic document properties; runtime callers can override afterward.
+    doc.core_properties.author = "SEAP Monitor"
+    doc.core_properties.company = ""
+    doc.core_properties.last_modified_by = "SEAP Monitor"
 
     # Set default font
     style = doc.styles["Normal"]
